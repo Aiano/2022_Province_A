@@ -53,7 +53,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+extern MPU6050_t mpu6050;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -105,11 +105,13 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
     //M2006_Init();
     ssd1306_Init(&hi2c2);
     MPU6050_Init(&hi2c1);
     servo_init();
+    HAL_TIM_Base_Start_IT(&htim2);
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */
@@ -195,7 +197,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
-
+    if (htim->Instance == TIM2) {
+        MPU6050_Read_All(&hi2c1, &mpu6050);
+    }
   /* USER CODE END Callback 1 */
 }
 

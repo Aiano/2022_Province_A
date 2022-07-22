@@ -58,14 +58,16 @@ TaskHandle_t selectableTaskHandleList[10];
 uint8_t currentSelectedTaskIndex = 0;
 uint8_t selectableTaskHandleNumber = 0;
 
+static TaskHandle_t LedTaskHandle = NULL;
+static TaskHandle_t SelectionTaskHandle = NULL;
+static TaskHandle_t DebugTaskHandle = NULL;
+static TaskHandle_t ServoTaskHandle = NULL;
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 void LedTask(void *pvParameters);
-
-void IMUTask(void *pvParameters);
 
 void SelectionTask(void *pvParameters);
 
@@ -75,12 +77,13 @@ void ServoTask(void *pvParameters);
 
 /* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void const * argument);
+void StartDefaultTask(void const *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
+void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer,
+                                   uint32_t *pulIdleTaskStackSize);
 
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
@@ -101,53 +104,50 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackTyp
   * @retval None
   */
 void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
-    TaskHandle_t LedTaskHandle = NULL;
-    xTaskCreate(LedTask, "LedTask", 128, NULL, 1, &LedTaskHandle);
+    /* USER CODE BEGIN Init */
 
-    TaskHandle_t IMUTaskHandle = NULL;
-    xTaskCreate(IMUTask, "IMUTask", 128, NULL, 6, &IMUTaskHandle);
+    xTaskCreate(LedTask, "LedTask", 64, NULL, 1, &LedTaskHandle);
 
-    TaskHandle_t SelectionTaskHandle = NULL;
-    xTaskCreate(SelectionTask, "SelectionTask", 128, NULL, 5, &SelectionTaskHandle);
 
-    TaskHandle_t DebugTaskHandle = NULL;
-    xTaskCreate(DebugTask, "Debug", 128, NULL, 5, &DebugTaskHandle);
+    xTaskCreate(SelectionTask, "SelectionTask", 64, NULL, 5, &SelectionTaskHandle);
+
+
+    xTaskCreate(DebugTask, "Debug", 64, NULL, 5, &DebugTaskHandle);
     vTaskSuspend(DebugTaskHandle);
 
-    TaskHandle_t ServoTaskHandle = NULL;
-    xTaskCreate(ServoTask, "Servo", 128, NULL, 5, &ServoTaskHandle);
+
+    xTaskCreate(ServoTask, "Servo", 64, NULL, 5, &ServoTaskHandle);
     vTaskSuspend(ServoTaskHandle);
 
     selectableTaskHandleList[0] = DebugTaskHandle;
     selectableTaskHandleList[1] = ServoTaskHandle;
     selectableTaskHandleNumber = 2;
-  /* USER CODE END Init */
+    /* USER CODE END Init */
 
-  /* USER CODE BEGIN RTOS_MUTEX */
+    /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
+    /* USER CODE END RTOS_MUTEX */
 
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
+    /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
+    /* USER CODE END RTOS_SEMAPHORES */
 
-  /* USER CODE BEGIN RTOS_TIMERS */
+    /* USER CODE BEGIN RTOS_TIMERS */
     /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
+    /* USER CODE END RTOS_TIMERS */
 
-  /* USER CODE BEGIN RTOS_QUEUES */
+    /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
+    /* USER CODE END RTOS_QUEUES */
 
-  /* Create the thread(s) */
-  /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityIdle, 0, 128);
-  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+    /* Create the thread(s) */
+    /* definition and creation of defaultTask */
+    osThreadDef(defaultTask, StartDefaultTask, osPriorityIdle, 0, 128);
+    defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
-  /* USER CODE BEGIN RTOS_THREADS */
+    /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
+    /* USER CODE END RTOS_THREADS */
 
 }
 
@@ -158,14 +158,13 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void const * argument)
-{
-  /* USER CODE BEGIN StartDefaultTask */
+void StartDefaultTask(void const *argument) {
+    /* USER CODE BEGIN StartDefaultTask */
     /* Infinite loop */
     for (;;) {
         osDelay(1);
     }
-  /* USER CODE END StartDefaultTask */
+    /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
@@ -181,21 +180,6 @@ void LedTask(void *pvParameters) {
     while (1) {
         HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
-    }
-}
-
-/**
- * @brief read data from IMU
- * @param pvParameters
- */
-void IMUTask(void *pvParameters) {
-    TickType_t xLastWakeTime;
-    xLastWakeTime = xTaskGetTickCount();
-    while (1) {
-        taskENTER_CRITICAL();
-        MPU6050_Read_All(&hi2c1, &mpu6050);
-        taskEXIT_CRITICAL();
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(100));
     }
 }
 
@@ -246,7 +230,7 @@ void DebugTask(void *pvParameters) {
         if (button_cancel_press_pending_flag) { // Back to selection task
             button_reset_all_flags();
 
-            vTaskResume(xTaskGetHandle("SelectionTask"));
+            vTaskResume(SelectionTaskHandle);
             vTaskSuspend(NULL);
         }
 
@@ -270,16 +254,16 @@ void ServoTask(void *pvParameters) {
         if (button_cancel_press_pending_flag) { // Back to selection task
             button_reset_all_flags();
 
-            vTaskResume(xTaskGetHandle("SelectionTask"));
+            vTaskResume(SelectionTaskHandle);
             vTaskSuspend(NULL);
         } else if (button_left_press_pending_flag) {
             button_reset_all_flags();
-            servo1--;
-            servo2--;
+            servo1 -= 10;
+            servo2 -= 10;
         } else if (button_right_press_pending_flag) {
             button_reset_all_flags();
-            servo1++;
-            servo2++;
+            servo1 += 10;
+            servo2 += 10;
         }
         gui_control_servo(servo1, SERVO1_MAX_DEGREE, servo2, SERVO2_MAX_DEGREE);
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(100));

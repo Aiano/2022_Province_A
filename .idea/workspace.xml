@@ -14,16 +14,18 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e1e65789-383c-4c12-af99-bdcff9cb7cb5" name="变更" comment="添加了舵机，任务切换等">
+    <list default="true" id="e1e65789-383c-4c12-af99-bdcff9cb7cb5" name="变更" comment="添加多任务切换">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/2022_Province_A.ioc" beforeDir="false" afterPath="$PROJECT_DIR$/2022_Province_A.ioc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BSP/GUI/gui.c" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/GUI/gui.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BSP/GUI/gui.h" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/GUI/gui.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/BSP/bsp_button.c" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/bsp_button.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BSP/bsp_button.h" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/bsp_button.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BSP/mpu6050.c" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/mpu6050.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Core/Inc/FreeRTOSConfig.h" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Inc/FreeRTOSConfig.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/Src/can.c" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Src/can.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/Inc/stm32f1xx_it.h" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Inc/stm32f1xx_it.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/Inc/tim.h" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Inc/tim.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Core/Src/freertos.c" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Src/freertos.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/Src/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Src/main.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/Src/stm32f1xx_it.c" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Src/stm32f1xx_it.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/Src/tim.c" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Src/tim.c" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -128,7 +130,7 @@
       <workItem from="1658401360034" duration="4225000" />
       <workItem from="1658423170867" duration="5469000" />
       <workItem from="1658459230781" duration="3052000" />
-      <workItem from="1658472807392" duration="15825000" />
+      <workItem from="1658472807392" duration="20292000" />
     </task>
     <task id="LOCAL-00001" summary="add ssd1306, gui">
       <created>1658462464791</created>
@@ -144,7 +146,14 @@
       <option name="project" value="LOCAL" />
       <updated>1658484083893</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="添加多任务切换">
+      <created>1658504644613</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1658504644613</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -164,6 +173,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="add ssd1306, gui" />
     <MESSAGE value="添加了舵机，任务切换等" />
-    <option name="LAST_COMMIT_MESSAGE" value="添加了舵机，任务切换等" />
+    <MESSAGE value="添加多任务切换" />
+    <option name="LAST_COMMIT_MESSAGE" value="添加多任务切换" />
   </component>
 </project>

@@ -17,7 +17,7 @@ void button_reset_all_flags() {
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-    HAL_Delay(10);
+    HAL_Delay(3);
     if (HAL_GPIO_ReadPin(BUTTON_Port, GPIO_Pin) == 0) {
         switch (GPIO_Pin) {
             case BUTTON_LEFT:
