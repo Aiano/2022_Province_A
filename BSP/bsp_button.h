@@ -7,6 +7,7 @@
 
 #include "main.h"
 
+#define BUTTON_Port GPIOC
 #define BUTTON_LEFT GPIO_PIN_6
 #define BUTTON_RIGHT GPIO_PIN_8
 #define BUTTON_CONFIRM GPIO_PIN_7
@@ -16,5 +17,7 @@ extern uint8_t button_left_press_pending_flag;
 extern uint8_t button_right_press_pending_flag;
 extern uint8_t button_confirm_press_pending_flag;
 extern uint8_t button_cancel_press_pending_flag;
+
+void button_reset_all_flags();
 
 #endif //INC_2022_PROVINCE_A_BSP_BUTTON_H

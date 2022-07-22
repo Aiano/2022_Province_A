@@ -59,8 +59,8 @@ void gui_draw_triangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t x
     gui_draw_line(x3, y3, x1, y1); // Line3
 }
 
-void gui_task_selection(char *taskName, uint8_t conform) {
-    if (conform == 0) {
+void gui_task_selection(char *taskName, uint8_t confirm) {
+    if (confirm == 0) {
         ssd1306_Fill(Black);
         gui_draw_rectangle(15, 5, 112, 60, 0);
         gui_draw_triangle(11, 15, 11, 50, 0, 32);

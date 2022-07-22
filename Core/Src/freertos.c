@@ -52,7 +52,12 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+
 MPU6050_t mpu6050;
+TaskHandle_t selectableTaskHandleList[10];
+uint8_t currentSelectedTaskIndex = 0;
+uint8_t selectableTaskHandleNumber = 0;
+
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 
@@ -60,11 +65,13 @@ osThreadId defaultTaskHandle;
 /* USER CODE BEGIN FunctionPrototypes */
 void LedTask(void *pvParameters);
 
-void ScreenTask(void *pvParameters);
-
 void IMUTask(void *pvParameters);
 
-void ManageTask(void *pvParameters);
+void SelectionTask(void *pvParameters);
+
+void DebugTask(void *pvParameters);
+
+void ServoTask(void *pvParameters);
 
 /* USER CODE END FunctionPrototypes */
 
@@ -98,14 +105,23 @@ void MX_FREERTOS_Init(void) {
     TaskHandle_t LedTaskHandle = NULL;
     xTaskCreate(LedTask, "LedTask", 128, NULL, 1, &LedTaskHandle);
 
-    TaskHandle_t ScreenTaskHandle = NULL;
-    xTaskCreate(ScreenTask, "ScreenTask", 128, NULL, 2, &ScreenTaskHandle);
-
     TaskHandle_t IMUTaskHandle = NULL;
-    xTaskCreate(IMUTask, "IMUTask", 128, NULL, 3, &IMUTaskHandle);
+    xTaskCreate(IMUTask, "IMUTask", 128, NULL, 6, &IMUTaskHandle);
 
-    TaskHandle_t ManageTaskHandle = NULL;
-    xTaskCreate(ManageTask, "ManageTask", 128, NULL, 6, &ManageTaskHandle);
+    TaskHandle_t SelectionTaskHandle = NULL;
+    xTaskCreate(SelectionTask, "SelectionTask", 128, NULL, 5, &SelectionTaskHandle);
+
+    TaskHandle_t DebugTaskHandle = NULL;
+    xTaskCreate(DebugTask, "Debug", 128, NULL, 5, &DebugTaskHandle);
+    vTaskSuspend(DebugTaskHandle);
+
+    TaskHandle_t ServoTaskHandle = NULL;
+    xTaskCreate(ServoTask, "Servo", 128, NULL, 5, &ServoTaskHandle);
+    vTaskSuspend(ServoTaskHandle);
+
+    selectableTaskHandleList[0] = DebugTaskHandle;
+    selectableTaskHandleList[1] = ServoTaskHandle;
+    selectableTaskHandleNumber = 2;
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -155,7 +171,7 @@ void StartDefaultTask(void const * argument)
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 /**
- * @brief LED闪烁任务，正常闪烁代表单片机正常运行
+ * @brief LED blink task, showing MCU is working correctly
  * @param pvParameters
  */
 void LedTask(void *pvParameters) {
@@ -169,31 +185,7 @@ void LedTask(void *pvParameters) {
 }
 
 /**
- * @brief 刷新屏幕任务
- * @param pvParameters
- */
-void ScreenTask(void *pvParameters) {
-    TickType_t xLastWakeTime;
-    xLastWakeTime = xTaskGetTickCount();
-
-    while (1) {
-//        gui_show_variables("X", (int16_t) mpu6050.KalmanAngleX,
-//                           "Y", (int16_t) mpu6050.KalmanAngleY,
-//                           "Gyro_Z", (int16_t) mpu6050.Gz);
-
-        for (uint16_t i = 0; i <= 180; i++) {
-            servo_set_degree(120,0);
-            gui_control_servo(120, SERVO1_MAX_DEGREE, i, SERVO2_MAX_DEGREE);
-            vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(50));
-        }
-
-
-    }
-
-}
-
-/**
- * @brief 读取来自IMU数据的任务
+ * @brief read data from IMU
  * @param pvParameters
  */
 void IMUTask(void *pvParameters) {
@@ -208,19 +200,88 @@ void IMUTask(void *pvParameters) {
 }
 
 /**
- * @brief 负责管理和切换其它FreeRTOS任务的任务
+ * @brief Select any other tasks
  * @param pvParameters
  */
-void ManageTask(void *pvParameters){
+void SelectionTask(void *pvParameters) {
     TickType_t xLastWakeTime;
     xLastWakeTime = xTaskGetTickCount();
 
-    while(1){
-        if(button_left_press_pending_flag){
-            button_left_press_pending_flag = 0; // reset flag
+    while (1) {
+        if (button_confirm_press_pending_flag) { // confirm
+            button_reset_all_flags();
 
-            HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
+            gui_task_selection(pcTaskGetName(selectableTaskHandleList[currentSelectedTaskIndex]), 1);
+
+            vTaskResume(selectableTaskHandleList[currentSelectedTaskIndex]);
+            vTaskSuspend(NULL);
+        } else if (button_left_press_pending_flag) { // left: reduce
+            button_reset_all_flags();
+            if (currentSelectedTaskIndex == 0) {
+                currentSelectedTaskIndex = selectableTaskHandleNumber - 1;
+            } else {
+                currentSelectedTaskIndex--;
+            }
+        } else if (button_right_press_pending_flag) { // right: increase
+            button_reset_all_flags();
+            currentSelectedTaskIndex++;
+            currentSelectedTaskIndex %= selectableTaskHandleNumber;
+        } else {
+            gui_task_selection(pcTaskGetName(selectableTaskHandleList[currentSelectedTaskIndex]), 0);
         }
+
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(100));
+    }
+}
+
+/**
+ * @brief Show debug information in screen
+ * @param pvParameters
+ */
+void DebugTask(void *pvParameters) {
+    TickType_t xLastWakeTime;
+    xLastWakeTime = xTaskGetTickCount();
+
+    while (1) {
+        if (button_cancel_press_pending_flag) { // Back to selection task
+            button_reset_all_flags();
+
+            vTaskResume(xTaskGetHandle("SelectionTask"));
+            vTaskSuspend(NULL);
+        }
+
+        gui_show_variables("X", (int16_t) mpu6050.KalmanAngleX,
+                           "Y", (int16_t) mpu6050.KalmanAngleY,
+                           "Gyro_Z", (int16_t) mpu6050.Gz);
+
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(100));
+    }
+}
+
+/**
+ * @brief only control servo
+ * @param pvParameters
+ */
+void ServoTask(void *pvParameters) {
+    TickType_t xLastWakeTime;
+    xLastWakeTime = xTaskGetTickCount();
+    int16_t servo1 = 0, servo2 = 0;
+    while (1) {
+        if (button_cancel_press_pending_flag) { // Back to selection task
+            button_reset_all_flags();
+
+            vTaskResume(xTaskGetHandle("SelectionTask"));
+            vTaskSuspend(NULL);
+        } else if (button_left_press_pending_flag) {
+            button_reset_all_flags();
+            servo1--;
+            servo2--;
+        } else if (button_right_press_pending_flag) {
+            button_reset_all_flags();
+            servo1++;
+            servo2++;
+        }
+        gui_control_servo(servo1, SERVO1_MAX_DEGREE, servo2, SERVO2_MAX_DEGREE);
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(100));
     }
 }
