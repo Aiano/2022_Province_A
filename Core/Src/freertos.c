@@ -30,6 +30,9 @@
 #include "fonts.h"
 #include "i2c.h"
 #include "gui.h"
+#include "mpu6050.h"
+#include "servo.h"
+#include "bsp_button.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,7 +52,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
+MPU6050_t mpu6050;
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 
@@ -59,15 +62,18 @@ void LedTask(void *pvParameters);
 
 void ScreenTask(void *pvParameters);
 
+void IMUTask(void *pvParameters);
+
+void ManageTask(void *pvParameters);
+
 /* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void const *argument);
+void StartDefaultTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
-void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer,
-                                   uint32_t *pulIdleTaskStackSize);
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
 
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
@@ -88,39 +94,44 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackTyp
   * @retval None
   */
 void MX_FREERTOS_Init(void) {
-    /* USER CODE BEGIN Init */
+  /* USER CODE BEGIN Init */
     TaskHandle_t LedTaskHandle = NULL;
     xTaskCreate(LedTask, "LedTask", 128, NULL, 1, &LedTaskHandle);
 
     TaskHandle_t ScreenTaskHandle = NULL;
     xTaskCreate(ScreenTask, "ScreenTask", 128, NULL, 2, &ScreenTaskHandle);
 
-    /* USER CODE END Init */
+    TaskHandle_t IMUTaskHandle = NULL;
+    xTaskCreate(IMUTask, "IMUTask", 128, NULL, 3, &IMUTaskHandle);
 
-    /* USER CODE BEGIN RTOS_MUTEX */
+    TaskHandle_t ManageTaskHandle = NULL;
+    xTaskCreate(ManageTask, "ManageTask", 128, NULL, 6, &ManageTaskHandle);
+  /* USER CODE END Init */
+
+  /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */
-    /* USER CODE END RTOS_MUTEX */
+  /* USER CODE END RTOS_MUTEX */
 
-    /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
-    /* USER CODE END RTOS_SEMAPHORES */
+  /* USER CODE END RTOS_SEMAPHORES */
 
-    /* USER CODE BEGIN RTOS_TIMERS */
+  /* USER CODE BEGIN RTOS_TIMERS */
     /* start timers, add new ones, ... */
-    /* USER CODE END RTOS_TIMERS */
+  /* USER CODE END RTOS_TIMERS */
 
-    /* USER CODE BEGIN RTOS_QUEUES */
+  /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
-    /* USER CODE END RTOS_QUEUES */
+  /* USER CODE END RTOS_QUEUES */
 
-    /* Create the thread(s) */
-    /* definition and creation of defaultTask */
-    osThreadDef(defaultTask, StartDefaultTask, osPriorityIdle, 0, 128);
-    defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+  /* Create the thread(s) */
+  /* definition and creation of defaultTask */
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityIdle, 0, 128);
+  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
-    /* USER CODE BEGIN RTOS_THREADS */
+  /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
-    /* USER CODE END RTOS_THREADS */
+  /* USER CODE END RTOS_THREADS */
 
 }
 
@@ -131,17 +142,22 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void const *argument) {
-    /* USER CODE BEGIN StartDefaultTask */
+void StartDefaultTask(void const * argument)
+{
+  /* USER CODE BEGIN StartDefaultTask */
     /* Infinite loop */
     for (;;) {
         osDelay(1);
     }
-    /* USER CODE END StartDefaultTask */
+  /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
+/**
+ * @brief LED闪烁任务，正常闪烁代表单片机正常运行
+ * @param pvParameters
+ */
 void LedTask(void *pvParameters) {
     TickType_t xLastWakeTime;
     xLastWakeTime = xTaskGetTickCount();
@@ -152,32 +168,61 @@ void LedTask(void *pvParameters) {
     }
 }
 
+/**
+ * @brief 刷新屏幕任务
+ * @param pvParameters
+ */
 void ScreenTask(void *pvParameters) {
     TickType_t xLastWakeTime;
     xLastWakeTime = xTaskGetTickCount();
 
     while (1) {
-        static uint8_t count = 0;
+//        gui_show_variables("X", (int16_t) mpu6050.KalmanAngleX,
+//                           "Y", (int16_t) mpu6050.KalmanAngleY,
+//                           "Gyro_Z", (int16_t) mpu6050.Gz);
 
-//        ssd1306_Fill(Black);
-        if (count++ % 2 == 0) {
-            gui_control_servo(50, 270, 50, 180);
-//            ssd1306_SetCursor(0, 16);
-//            ssd1306_WriteString("ZHT", Font_16x26, White);
-        } else {
-            gui_show_variables("Acc", 10, NULL, 0, NULL, 0);
-//            ssd1306_SetCursor(0, 36);
-//            ssd1306_WriteString("Beautiful", Font_11x18, White);
+        for (uint16_t i = 0; i <= 180; i++) {
+            servo_set_degree(120,0);
+            gui_control_servo(120, SERVO1_MAX_DEGREE, i, SERVO2_MAX_DEGREE);
+            vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(50));
         }
 
-//        gui_draw_rectangle(32, 32, count, count);
-//        if (count++ > 64) count = 0;
 
-//        ssd1306_UpdateScreen(&hi2c2);
-
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
     }
 
+}
+
+/**
+ * @brief 读取来自IMU数据的任务
+ * @param pvParameters
+ */
+void IMUTask(void *pvParameters) {
+    TickType_t xLastWakeTime;
+    xLastWakeTime = xTaskGetTickCount();
+    while (1) {
+        taskENTER_CRITICAL();
+        MPU6050_Read_All(&hi2c1, &mpu6050);
+        taskEXIT_CRITICAL();
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(100));
+    }
+}
+
+/**
+ * @brief 负责管理和切换其它FreeRTOS任务的任务
+ * @param pvParameters
+ */
+void ManageTask(void *pvParameters){
+    TickType_t xLastWakeTime;
+    xLastWakeTime = xTaskGetTickCount();
+
+    while(1){
+        if(button_left_press_pending_flag){
+            button_left_press_pending_flag = 0; // reset flag
+
+            HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
+        }
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(100));
+    }
 }
 /* USER CODE END Application */
 

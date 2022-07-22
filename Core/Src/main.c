@@ -32,6 +32,8 @@
 /* USER CODE BEGIN Includes */
 #include "bsp_m2006.h"
 #include "ssd1306.h"
+#include "mpu6050.h"
+#include "servo.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -82,7 +84,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+    HAL_Delay(200);
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -104,8 +106,10 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-    M2006_Init();
+    //M2006_Init();
     ssd1306_Init(&hi2c2);
+    MPU6050_Init(&hi2c1);
+    servo_init();
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */

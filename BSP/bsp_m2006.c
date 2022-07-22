@@ -334,6 +334,7 @@ static uint8_t CAN_SendData(CAN_HandleTypeDef *canHandle, uint8_t *pData, uint16
   */
 static void PID_param_init() {
     /* 速度相关初始化参数 */
+    // Motor1
     pid_speed[0].target_val = 3000.0;
     pid_speed[0].output_val = 0.0;
     pid_speed[0].err = 0.0;
@@ -342,8 +343,8 @@ static void PID_param_init() {
     pid_speed[0].Kp = 20;
     pid_speed[0].Ki = 0.0;
     pid_speed[0].Kd = 0.0;
-
-    pid_speed[1].target_val = -3000.0;
+    // Motor2
+    pid_speed[1].target_val = 3000.0;
     pid_speed[1].output_val = 0.0;
     pid_speed[1].err = 0.0;
     pid_speed[1].err_last = 0.0;
@@ -351,7 +352,7 @@ static void PID_param_init() {
     pid_speed[1].Kp = 20;
     pid_speed[1].Ki = 0.0;
     pid_speed[1].Kd = 0.0;
-
+    // Motor3
     pid_speed[2].target_val = 3000.0;
     pid_speed[2].output_val = 0.0;
     pid_speed[2].err = 0.0;
@@ -360,8 +361,8 @@ static void PID_param_init() {
     pid_speed[2].Kp = 20;
     pid_speed[2].Ki = 0.0;
     pid_speed[2].Kd = 0.0;
-
-    pid_speed[3].target_val = -3000.0;
+    // Motor4
+    pid_speed[3].target_val = 3000.0;
     pid_speed[3].output_val = 0.0;
     pid_speed[3].err = 0.0;
     pid_speed[3].err_last = 0.0;
