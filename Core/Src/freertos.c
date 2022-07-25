@@ -65,6 +65,7 @@ static TaskHandle_t SelectionTaskHandle = NULL;
 static TaskHandle_t DebugTaskHandle = NULL;
 static TaskHandle_t ServoTaskHandle = NULL;
 static TaskHandle_t FollowLineTaskHandle = NULL;
+static TaskHandle_t RotateTaskHandle = NULL;
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 
@@ -80,14 +81,17 @@ void ServoTask(void *pvParameters);
 
 void FollowLineTask(void *pvParameters);
 
+void RotateTask(void *pvParameters);
+
 /* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void const * argument);
+void StartDefaultTask(void const *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
+void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer,
+                                   uint32_t *pulIdleTaskStackSize);
 
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
@@ -108,7 +112,7 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackTyp
   * @retval None
   */
 void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
+    /* USER CODE BEGIN Init */
 
     xTaskCreate(LedTask, "LedTask", 64, NULL, 1, &LedTaskHandle);
 
@@ -126,36 +130,40 @@ void MX_FREERTOS_Init(void) {
     xTaskCreate(FollowLineTask, "Follow", 64, NULL, 6, &FollowLineTaskHandle);
     vTaskSuspend(FollowLineTaskHandle);
 
+    xTaskCreate(RotateTask, "Rotate", 64, NULL, 6, &RotateTaskHandle);
+    vTaskSuspend(RotateTaskHandle);
+
     selectableTaskHandleList[0] = DebugTaskHandle;
     selectableTaskHandleList[1] = ServoTaskHandle;
     selectableTaskHandleList[2] = FollowLineTaskHandle;
-    selectableTaskHandleNumber = 3;
-  /* USER CODE END Init */
+    selectableTaskHandleList[3] = RotateTaskHandle;
+    selectableTaskHandleNumber = 4;
+    /* USER CODE END Init */
 
-  /* USER CODE BEGIN RTOS_MUTEX */
+    /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
+    /* USER CODE END RTOS_MUTEX */
 
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
+    /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
+    /* USER CODE END RTOS_SEMAPHORES */
 
-  /* USER CODE BEGIN RTOS_TIMERS */
+    /* USER CODE BEGIN RTOS_TIMERS */
     /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
+    /* USER CODE END RTOS_TIMERS */
 
-  /* USER CODE BEGIN RTOS_QUEUES */
+    /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
+    /* USER CODE END RTOS_QUEUES */
 
-  /* Create the thread(s) */
-  /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityIdle, 0, 128);
-  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+    /* Create the thread(s) */
+    /* definition and creation of defaultTask */
+    osThreadDef(defaultTask, StartDefaultTask, osPriorityIdle, 0, 128);
+    defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
-  /* USER CODE BEGIN RTOS_THREADS */
+    /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
+    /* USER CODE END RTOS_THREADS */
 
 }
 
@@ -166,14 +174,13 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void const * argument)
-{
-  /* USER CODE BEGIN StartDefaultTask */
+void StartDefaultTask(void const *argument) {
+    /* USER CODE BEGIN StartDefaultTask */
     /* Infinite loop */
     for (;;) {
         osDelay(1);
     }
-  /* USER CODE END StartDefaultTask */
+    /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
@@ -318,6 +325,58 @@ void FollowLineTask(void *pvParameters) {
 //                               "right", avg_speed - u);
         }
 
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(100));
+    }
+}
+
+#define Degree2DeltaZ 8
+void RotateTask(void *pvParameters) {
+    TickType_t xLastWakeTime;
+    xLastWakeTime = xTaskGetTickCount();
+
+    static uint8_t is_rotating_flag = 0;
+    static int16_t rotated_degree = 0;
+    static int16_t target_rotate_degree = 0;
+
+    while (1) {
+        // Scan button
+        if (button_cancel_press_pending_flag) { // Back to selection task
+            button_reset_all_flags();
+
+            M2006_set_speed(0, 0, 0, 0);
+
+            vTaskResume(SelectionTaskHandle);
+            vTaskSuspend(NULL);
+        } else if (button_confirm_press_pending_flag) { // Detect button press and rotate specific degree
+            button_reset_all_flags();
+
+            rotated_degree = 0;
+            is_rotating_flag = 1;
+
+            if (target_rotate_degree > 0) {
+                M2006_set_speed(-1000, -1000, -1000, -1000);
+            } else if (target_rotate_degree < 0) {
+                M2006_set_speed(1000, 1000, 1000, 1000);
+            }
+        } else if (button_left_press_pending_flag) {
+            button_reset_all_flags();
+
+            target_rotate_degree -= 10;
+        } else if (button_right_press_pending_flag) {
+            button_reset_all_flags();
+
+            target_rotate_degree += 10;
+        }
+
+        if (is_rotating_flag) { // Rotating
+            rotated_degree += mpu6050.Gz;
+            if (abs(rotated_degree) > abs(target_rotate_degree * Degree2DeltaZ)) { // Rotation finished
+                M2006_set_speed(0, 0, 0, 0);
+                is_rotating_flag = 0; // reset flag
+            }
+        }
+
+        gui_show_variables("Gz", (int16_t) mpu6050.Gz, "target", target_rotate_degree, "now", rotated_degree, NULL, 0);
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(100));
     }
 }

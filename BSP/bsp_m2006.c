@@ -452,3 +452,10 @@ static float speed_pid_realize(PID *pid, float actual_val) {
     /*返回当前实际值*/
     return pid->output_val;
 }
+
+void M2006_set_speed(float motor1, float motor2, float motor3, float motor4) {
+    pid_speed[0].target_val = motor1; // Motor1
+    pid_speed[1].target_val = motor2; // Motor2
+    pid_speed[2].target_val = motor3; // Motor3
+    pid_speed[3].target_val = motor4; // Motor4
+}

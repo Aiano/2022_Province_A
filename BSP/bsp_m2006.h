@@ -75,4 +75,6 @@ static float location_pid_realize(PID *pid, float actual_val);
 
 static float speed_pid_realize(PID *pid, float actual_val);
 
+void M2006_set_speed(float motor1, float motor2, float motor3, float motor4);
+
 #endif

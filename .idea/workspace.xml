@@ -14,25 +14,11 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e1e65789-383c-4c12-af99-bdcff9cb7cb5" name="变更" comment="调整FreeRTOS">
-      <change afterPath="$PROJECT_DIR$/BSP/uart_parser.c" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/BSP/uart_parser.h" afterDir="false" />
+    <list default="true" id="e1e65789-383c-4c12-af99-bdcff9cb7cb5" name="变更" comment="将oled屏幕驱动改为DMA发送">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.mxproject" beforeDir="false" afterPath="$PROJECT_DIR$/.mxproject" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/2022_Province_A.ioc" beforeDir="false" afterPath="$PROJECT_DIR$/2022_Province_A.ioc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BSP/GUI/gui.c" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/GUI/gui.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BSP/GUI/gui.h" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/GUI/gui.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BSP/bsp_button.c" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/bsp_button.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/BSP/bsp_m2006.c" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/bsp_m2006.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BSP/ssd1306.c" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/ssd1306.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BSP/ssd1306.h" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/ssd1306.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/Inc/stm32f1xx_hal_conf.h" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Inc/stm32f1xx_hal_conf.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/Inc/stm32f1xx_it.h" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Inc/stm32f1xx_it.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BSP/bsp_m2006.h" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/bsp_m2006.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Core/Src/freertos.c" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Src/freertos.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/Src/i2c.c" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Src/i2c.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/Src/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Src/main.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/Src/stm32f1xx_it.c" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Src/stm32f1xx_it.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/Src/usart.c" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Src/usart.c" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -140,7 +126,7 @@
       <workItem from="1658472807392" duration="20333000" />
       <workItem from="1658554617849" duration="11870000" />
       <workItem from="1658662626141" duration="1521000" />
-      <workItem from="1658725656436" duration="5415000" />
+      <workItem from="1658725656436" duration="9194000" />
     </task>
     <task id="LOCAL-00001" summary="add ssd1306, gui">
       <created>1658462464791</created>
@@ -170,7 +156,14 @@
       <option name="project" value="LOCAL" />
       <updated>1658509031665</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="将oled屏幕驱动改为DMA发送">
+      <created>1658731961142</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1658731961142</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -192,7 +185,8 @@
     <MESSAGE value="添加了舵机，任务切换等" />
     <MESSAGE value="添加多任务切换" />
     <MESSAGE value="调整FreeRTOS" />
-    <option name="LAST_COMMIT_MESSAGE" value="调整FreeRTOS" />
+    <MESSAGE value="将oled屏幕驱动改为DMA发送" />
+    <option name="LAST_COMMIT_MESSAGE" value="将oled屏幕驱动改为DMA发送" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
