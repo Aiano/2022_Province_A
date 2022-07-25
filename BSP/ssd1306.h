@@ -17,6 +17,8 @@
 
 #include "stm32f1xx_hal.h"
 #include "fonts.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 // I2c address
 #ifndef SSD1306_I2C_ADDR

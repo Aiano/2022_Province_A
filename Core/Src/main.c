@@ -22,6 +22,7 @@
 #include "cmsis_os.h"
 #include "adc.h"
 #include "can.h"
+#include "dma.h"
 #include "i2c.h"
 #include "spi.h"
 #include "tim.h"
@@ -34,6 +35,7 @@
 #include "ssd1306.h"
 #include "mpu6050.h"
 #include "servo.h"
+#include "uart_parser.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -96,6 +98,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_CAN_Init();
   MX_ADC1_Init();
   MX_I2C1_Init();
@@ -107,11 +110,12 @@ int main(void)
   MX_USART3_UART_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-    //M2006_Init();
+    M2006_Init();
     ssd1306_Init(&hi2c2);
     MPU6050_Init(&hi2c1);
     servo_init();
     HAL_TIM_Base_Start_IT(&htim2);
+    uart_parser_init(&huart1);
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */

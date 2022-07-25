@@ -11,17 +11,16 @@ static SSD1306_t SSD1306;
 //
 //  Send a byte to the command register
 //
-static uint8_t ssd1306_WriteCommand(I2C_HandleTypeDef *hi2c, uint8_t command)
-{
-    return HAL_I2C_Mem_Write(hi2c, SSD1306_I2C_ADDR, 0x00, 1, &command, 1, 10);
+static uint8_t ssd1306_WriteCommand(I2C_HandleTypeDef *hi2c, uint8_t command) {
+    while (HAL_I2C_GetState(hi2c) != HAL_I2C_STATE_READY);
+    return HAL_I2C_Mem_Write_DMA(hi2c, SSD1306_I2C_ADDR, 0x00, 1, &command, 1);
 }
 
 
 //
 //  Initialize the oled screen
 //
-uint8_t ssd1306_Init(I2C_HandleTypeDef *hi2c)
-{
+uint8_t ssd1306_Init(I2C_HandleTypeDef *hi2c) {
     // Wait for the screen to boot
     HAL_Delay(100);
     int status = 0;
@@ -29,7 +28,8 @@ uint8_t ssd1306_Init(I2C_HandleTypeDef *hi2c)
     // Init LCD
     status += ssd1306_WriteCommand(hi2c, 0xAE);   // Display off
     status += ssd1306_WriteCommand(hi2c, 0x20);   // Set Memory Addressing Mode
-    status += ssd1306_WriteCommand(hi2c, 0x10);   // 00,Horizontal Addressing Mode;01,Vertical Addressing Mode;10,Page Addressing Mode (RESET);11,Invalid
+    status += ssd1306_WriteCommand(hi2c,
+                                   0x10);   // 00,Horizontal Addressing Mode;01,Vertical Addressing Mode;10,Page Addressing Mode (RESET);11,Invalid
     status += ssd1306_WriteCommand(hi2c, 0xB0);   // Set Page Start Address for Page Addressing Mode,0-7
     status += ssd1306_WriteCommand(hi2c, 0xC8);   // Set COM Output Scan Direction
     status += ssd1306_WriteCommand(hi2c, 0x00);   // Set low column address
@@ -86,13 +86,11 @@ uint8_t ssd1306_Init(I2C_HandleTypeDef *hi2c)
 //
 //  Fill the whole screen with the given color
 //
-void ssd1306_Fill(SSD1306_COLOR color)
-{
+void ssd1306_Fill(SSD1306_COLOR color) {
     // Fill screenbuffer with a constant value (color)
     uint32_t i;
 
-    for(i = 0; i < sizeof(SSD1306_Buffer); i++)
-    {
+    for (i = 0; i < sizeof(SSD1306_Buffer); i++) {
         SSD1306_Buffer[i] = (color == Black) ? 0x00 : 0xFF;
     }
 }
@@ -100,16 +98,17 @@ void ssd1306_Fill(SSD1306_COLOR color)
 //
 //  Write the screenbuffer with changed to the screen
 //
-void ssd1306_UpdateScreen(I2C_HandleTypeDef *hi2c)
-{
-    uint8_t i;
-
-    for (i = 0; i < 8; i++) {
+void ssd1306_UpdateScreen(I2C_HandleTypeDef *hi2c) {
+    for (uint8_t i = 0; i < 8; i++) {
         ssd1306_WriteCommand(hi2c, 0xB0 + i);
         ssd1306_WriteCommand(hi2c, 0x00);
         ssd1306_WriteCommand(hi2c, 0x10);
 
-        HAL_I2C_Mem_Write(hi2c, SSD1306_I2C_ADDR, 0x40, 1, &SSD1306_Buffer[SSD1306_WIDTH * i], SSD1306_WIDTH, 100);
+//        HAL_I2C_Mem_Write(hi2c, SSD1306_I2C_ADDR, 0x40, 1, &SSD1306_Buffer[SSD1306_WIDTH * i], SSD1306_WIDTH, 100);
+        while (HAL_I2C_GetState(hi2c) != HAL_I2C_STATE_READY);
+        HAL_I2C_Mem_Write_DMA(hi2c, SSD1306_I2C_ADDR, 0x40, I2C_MEMADD_SIZE_8BIT, &SSD1306_Buffer[SSD1306_WIDTH * i],
+                              SSD1306_WIDTH);
+
     }
 }
 
@@ -119,27 +118,21 @@ void ssd1306_UpdateScreen(I2C_HandleTypeDef *hi2c)
 //  Y => Y Coordinate
 //  color => Pixel color
 //
-void ssd1306_DrawPixel(uint8_t x, uint8_t y, SSD1306_COLOR color)
-{
-    if (x >= SSD1306_WIDTH || y >= SSD1306_HEIGHT)
-    {
+void ssd1306_DrawPixel(uint8_t x, uint8_t y, SSD1306_COLOR color) {
+    if (x >= SSD1306_WIDTH || y >= SSD1306_HEIGHT) {
         // Don't write outside the buffer
         return;
     }
 
     // Check if pixel should be inverted
-    if (SSD1306.Inverted)
-    {
-        color = (SSD1306_COLOR)!color;
+    if (SSD1306.Inverted) {
+        color = (SSD1306_COLOR) !color;
     }
 
     // Draw in the correct color
-    if (color == White)
-    {
+    if (color == White) {
         SSD1306_Buffer[x + (y / 8) * SSD1306_WIDTH] |= 1 << (y % 8);
-    }
-    else
-    {
+    } else {
         SSD1306_Buffer[x + (y / 8) * SSD1306_WIDTH] &= ~(1 << (y % 8));
     }
 }
@@ -151,31 +144,24 @@ void ssd1306_DrawPixel(uint8_t x, uint8_t y, SSD1306_COLOR color)
 //  Font    => Font to use
 //  color   => Black or White
 //
-char ssd1306_WriteChar(char ch, FontDef Font, SSD1306_COLOR color)
-{
+char ssd1306_WriteChar(char ch, FontDef Font, SSD1306_COLOR color) {
     uint32_t i, b, j;
 
     // Check remaining space on current line
     if (SSD1306_WIDTH <= (SSD1306.CurrentX + Font.FontWidth) ||
-        SSD1306_HEIGHT <= (SSD1306.CurrentY + Font.FontHeight))
-    {
+        SSD1306_HEIGHT <= (SSD1306.CurrentY + Font.FontHeight)) {
         // Not enough space on current line
         return 0;
     }
 
     // Translate font to screenbuffer
-    for (i = 0; i < Font.FontHeight; i++)
-    {
+    for (i = 0; i < Font.FontHeight; i++) {
         b = Font.data[(ch - 32) * Font.FontHeight + i];
-        for (j = 0; j < Font.FontWidth; j++)
-        {
-            if ((b << j) & 0x8000)
-            {
+        for (j = 0; j < Font.FontWidth; j++) {
+            if ((b << j) & 0x8000) {
                 ssd1306_DrawPixel(SSD1306.CurrentX + j, (SSD1306.CurrentY + i), (SSD1306_COLOR) color);
-            }
-            else
-            {
-                ssd1306_DrawPixel(SSD1306.CurrentX + j, (SSD1306.CurrentY + i), (SSD1306_COLOR)!color);
+            } else {
+                ssd1306_DrawPixel(SSD1306.CurrentX + j, (SSD1306.CurrentY + i), (SSD1306_COLOR) !color);
             }
         }
     }
@@ -190,13 +176,10 @@ char ssd1306_WriteChar(char ch, FontDef Font, SSD1306_COLOR color)
 //
 //  Write full string to screenbuffer
 //
-char ssd1306_WriteString(char* str, FontDef Font, SSD1306_COLOR color)
-{
+char ssd1306_WriteString(char *str, FontDef Font, SSD1306_COLOR color) {
     // Write until null-byte
-    while (*str)
-    {
-        if (ssd1306_WriteChar(*str, Font, color) != *str)
-        {
+    while (*str) {
+        if (ssd1306_WriteChar(*str, Font, color) != *str) {
             // Char could not be written
             return *str;
         }
@@ -212,16 +195,14 @@ char ssd1306_WriteString(char* str, FontDef Font, SSD1306_COLOR color)
 //
 //  Invert background/foreground colors
 //
-void ssd1306_InvertColors(void)
-{
+void ssd1306_InvertColors(void) {
     SSD1306.Inverted = !SSD1306.Inverted;
 }
 
 //
 //  Set cursor position
 //
-void ssd1306_SetCursor(uint8_t x, uint8_t y)
-{
+void ssd1306_SetCursor(uint8_t x, uint8_t y) {
     SSD1306.CurrentX = x;
     SSD1306.CurrentY = y;
 }

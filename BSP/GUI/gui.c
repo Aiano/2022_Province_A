@@ -76,7 +76,8 @@ void gui_task_selection(char *taskName, uint8_t confirm) {
     ssd1306_UpdateScreen(SCREEN_I2C_HANDLE);
 }
 
-void gui_show_variables(char *var1, int16_t value1, char *var2, int16_t value2, char *var3, int16_t value3) {
+void gui_show_variables(char *var1, int16_t value1, char *var2, int16_t value2, char *var3, int16_t value3, char *var4,
+                        int16_t value4) {
     ssd1306_Fill(Black);
     gui_draw_rectangle(2, 2, 125, 61, 0);
 
@@ -106,6 +107,14 @@ void gui_show_variables(char *var1, int16_t value1, char *var2, int16_t value2, 
         ssd1306_WriteString(var3, Font_7x10, White);
         ssd1306_WriteChar(':', Font_7x10, White);
         itoa(value3, str, 10);
+        ssd1306_WriteString(str, Font_7x10, White);
+    }
+
+    if(var4 != NULL) {
+        ssd1306_SetCursor(4, 40);
+        ssd1306_WriteString(var4, Font_7x10, White);
+        ssd1306_WriteChar(':', Font_7x10, White);
+        itoa(value4, str, 10);
         ssd1306_WriteString(str, Font_7x10, White);
     }
 
